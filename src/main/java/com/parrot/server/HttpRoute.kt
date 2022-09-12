@@ -16,6 +16,7 @@ class HttpRoute constructor(private val bot: TelegramBot) : Route {
             bot.spam(formatMessage(bodyObj))
             response.status(200)
         } catch (e: Exception) {
+            bot.spam("Error while processing request: ${e.message}")
             java.util.logging.Logger.getLogger(this::class.java.name).log(Level.INFO, "Server start error", e)
             response.status(500)
         }
@@ -24,8 +25,10 @@ class HttpRoute constructor(private val bot: TelegramBot) : Route {
 
     private fun formatMessage(messageObj: RequestDTO): String {
         val sb: StringBuilder = StringBuilder()
-        messageObj.alerts.stream()
-            .forEach { item -> sb.append("${item.status.uppercase(Locale.getDefault())} ${item.labels.alertname}: ${item.annotations.summary}") }
+        if (messageObj.alerts != null) {
+            messageObj.alerts.stream()
+                .forEach { item -> sb.append("${item.status.uppercase(Locale.getDefault())} ${item.labels.alertname}: ${item.annotations.summary}").append("\n") }
+        }
         return sb.toString()
     }
 }

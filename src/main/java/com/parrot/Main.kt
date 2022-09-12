@@ -7,12 +7,14 @@ import org.apache.commons.daemon.DaemonContext
 import java.io.File
 import kotlin.system.exitProcess
 
-
 class Main : Daemon {
     companion object {
-        public const val KEY_RESOURCE_FILE = "tg_key.txt"
+        private const val KEY_RESOURCE_FILE = "tg_key.txt"
         private const val port = 1337
         private const val webhookAddress = "/webhook"
+        const val dbName = "webhook_users"
+        const val tableName = "webhook_users"
+
         private val server = Server.getInstance()
 
         @JvmStatic
@@ -37,7 +39,7 @@ class Main : Daemon {
     }
 
     override fun start() {
-       Companion.start(emptyArray())
+        Companion.start(emptyArray())
     }
 
     override fun stop() {

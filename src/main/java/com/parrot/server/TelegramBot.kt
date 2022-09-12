@@ -6,16 +6,15 @@ import com.github.kotlintelegrambot.dispatch
 import com.github.kotlintelegrambot.dispatcher.command
 import com.github.kotlintelegrambot.entities.ChatId
 import com.github.kotlintelegrambot.entities.TelegramFile
+import com.parrot.dao.UsersProvider
 import com.parrot.utils.Utils
 import java.util.logging.Level
 import java.util.logging.Logger
-import kotlin.system.exitProcess
 
 class TelegramBot private constructor() : AutoCloseable {
     companion object {
         private var currentBot: TelegramBot? = null
         private var botApiProcessor: Bot? = null
-        private val chats: MutableSet<Long> = HashSet()
 
         fun getInstance(): TelegramBot {
             if (currentBot == null) {
@@ -35,16 +34,16 @@ class TelegramBot private constructor() : AutoCloseable {
                             Level.INFO,
                             "start ${message.chat.username} ${message.chat.firstName} ${message.chat.lastName}"
                         )
-                        chats.add(message.chat.id)
+                        UsersProvider.addUser(message.chat.id, message.chat.username.toString())
                         bot.sendDocument(
                             ChatId.fromId(message.chat.id),
-                            TelegramFile.ByFile(Utils.getParentResourceFile("resources/hello_there.gif"))
+                            TelegramFile.ByFile(Utils.getParentResourceFile("resources/hello_there.gif")),
+                            "Hello there!"
                         )
                     } catch (e: Exception) {
                         Logger.getLogger(this::class.java.name).log(Level.INFO, "Bot error", e)
                         bot.sendMessage(
-                            ChatId.fromId(message.chat.id),
-                            "Something went terribly wrong: ${e.message}"
+                            ChatId.fromId(message.chat.id), "Something went terribly wrong: ${e.message}"
                         )
                     }
                 }
@@ -55,16 +54,16 @@ class TelegramBot private constructor() : AutoCloseable {
                             Level.INFO,
                             "stop ${message.chat.username} ${message.chat.firstName} ${message.chat.lastName}"
                         )
-                        chats.remove(message.chat.id)
+                        UsersProvider.deleteUser(message.chat.id)
                         bot.sendDocument(
                             ChatId.fromId(message.chat.id),
-                            TelegramFile.ByFile(Utils.getParentResourceFile("resources/ciao.gif"))
+                            TelegramFile.ByFile(Utils.getParentResourceFile("resources/ciao.gif")),
+                            "By!"
                         )
                     } catch (e: Exception) {
                         Logger.getLogger(this::class.java.name).log(Level.INFO, "Bot error", e)
                         bot.sendMessage(
-                            ChatId.fromId(message.chat.id),
-                            "Something went terribly wrong: ${e.message}"
+                            ChatId.fromId(message.chat.id), "Something went terribly wrong: ${e.message}"
                         )
                     }
                 }
@@ -75,19 +74,15 @@ class TelegramBot private constructor() : AutoCloseable {
         botApiProcessor!!.startPolling()
     }
 
-    public fun spam(message: String) {
-        if (chats.isEmpty()) {
-            Logger.getLogger(this::class.java.name).log(Level.INFO, "No chats to spam")
-        }
-        for (chatId in chats) {
+    fun spam(message: String) {
+        UsersProvider.getUsers().forEach {
             try {
                 if (botApiProcessor == null) {
                     Logger.getLogger(this::class.java.name).log(Level.INFO, "Bot if not initialized!")
-                    return
+                    return@forEach
                 }
                 botApiProcessor!!.sendMessage(
-                    chatId = ChatId.fromId(chatId),
-                    text = message
+                    chatId = ChatId.fromId(it.chatId), text = message
                 )
             } catch (e: java.lang.Exception) {
                 Logger.getLogger(this::class.java.name).log(Level.INFO, "Telegram bot sending error", e)

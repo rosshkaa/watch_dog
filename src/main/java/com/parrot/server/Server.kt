@@ -1,8 +1,11 @@
 package com.parrot.server
 
+import com.parrot.Main
+import com.parrot.dao.UsersProvider
+import org.jetbrains.exposed.sql.Database
 import spark.Service
 import java.util.logging.Level
-import java.util.logging.Logger.*
+import java.util.logging.Logger.getLogger
 
 class Server private constructor() {
     companion object {
@@ -21,6 +24,14 @@ class Server private constructor() {
 
     fun start(token: String, port: Int, path: String) {
         try {
+            Database.connect(
+                "jdbc:postgresql://127.0.0.1:5432/${Main.dbName}",
+                driver = "org.postgresql.Driver",
+                user = "postgres",
+                password = "admin"
+            )
+
+            UsersProvider.init()
             bot = TelegramBot.getInstance()
             bot.start(token)
 
